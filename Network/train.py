@@ -127,7 +127,7 @@ def train():
 
 def val(epoch):
     fcn_model.eval()
-    pixel_acc = []
+    pixel_acc_list = []
 
     for iter, batch in enumerate(val_loader):
         if use_gpu:
@@ -144,10 +144,10 @@ def val(epoch):
         target = target.transpose(0, 2, 3, 1).reshape(-1, n_class).argmax(axis=1).reshape(N, h, w)
 
         for p, t in zip(pred, target):
-            pixel_acc.append(pixel_acc(p, t))
+            pixel_acc_list.append(pixel_acc(p, t))
 
 
-    accs = np.mean(pixel_acc)
+    accs = np.mean(pixel_acc_list)
     validation_accuracy[epoch] = accs
 
 
