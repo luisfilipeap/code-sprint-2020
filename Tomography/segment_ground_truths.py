@@ -21,6 +21,7 @@ for file in os.listdir(src):
 
     t = np.linspace(0,1,6)
     final = np.digitize(i, bins=t)
+    print(np.unique(final))
 
-    imwrite(dest+file,final)
+    #imwrite(dest+file,final)
 
