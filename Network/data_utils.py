@@ -21,7 +21,7 @@ from math import floor
 import scipy.misc
 import random
 from imageio import imread
-
+import read_kneeDataset as kd
 
 """
 Parameters to split data into groups for training, validation, and testing  
@@ -30,69 +30,36 @@ src_img:            directory containing the set of low quality or high quality 
 split_proportion:   proportion of data into the training, validation, and testing groups respectively
 """
 
-
-
-def get_unique_scans(src_data):
-
-    scans = []
-    for file in os.listdir(src_data):
-        temp = file.split("_")
-        new_scan = temp[0]
-        if new_scan not in scans:
-            scans.append(new_scan)
-    return scans
-
-def get_slices_from_scan(src_data, scan):
-
-    slices = []
-    for file in os.listdir(src_data):
-        if file.startswith(scan):
-            slices.append(file)
-
-    return slices
-
-def get_train_val_test(src_data, proportion):
-
-    scans = get_unique_scans(src_data)
+def get_train_val_test(proportion):
+    scans = kd.get_unique_scans()
     random.shuffle(scans)
 
     training = scans[0:floor(len(scans) * proportion[0])]
     validation = scans[floor(len(scans) * proportion[0]):floor(len(scans) * proportion[0]) + floor(len(scans) * proportion[1])]
     test = scans[floor(len(scans) * proportion[0]) + floor(len(scans) * proportion[1]):len(scans)]
 
-    data_training = []
-    data_validation = []
-    data_test = []
+    return training, validation, test
 
-    for i in training:
-        data_training.extend(get_slices_from_scan(src_data, i))
+def create_csv_files(proportion):
 
-    for j in validation:
-        data_validation.extend(get_slices_from_scan(src_data, j))
+    if not os.path.isfile('train_knee.csv') and not os.path.isfile('validation_knee.csv') and not os.path.isfile('test_knee.csv'):
+        train_file = open('train_knee.csv','w')
+        val_file = open('validation_knee.csv','w')
+        test_file = open('test_knee.csv','w')
 
-    for z in test:
-        data_test.extend(get_slices_from_scan(src_data, z))
-
-
-    return data_training, data_validation, data_test
-
-def create_csv_files(src_data, proportion):
-
-    if not os.path.isfile('train_apples.csv') and not os.path.isfile('validation_apples.csv') and not os.path.isfile('test_apples.csv'):
-        train_file = open('train_apples.csv','w')
-        val_file = open('validation_apples.csv','w')
-        test_file = open('test_apples.csv','w')
-
-        train_set, val_set, test_set= get_train_val_test(src_img, proportion)
+        train_set, val_set, test_set= get_train_val_test(proportion)
 
         for z in train_set:
-            train_file.write(z + ',' + z[0:len(z)-3]+ 'npy' + '\n')
+            for s in kd.get_slices_from_scan(z):
+                train_file.write('{}, {}\n'.format(z,s))
 
         for z in val_set:
-            val_file.write(z + ',' + z[0:len(z)-3]+ 'npy' + '\n')
+            for s in kd.get_slices_from_scan(z):
+                val_file.write('{}, {}\n'.format(z,s))
 
         for z in test_set:
-            test_file.write(z + ',' + z[0:len(z)-3]+ 'npy' + '\n')
+            for s in kd.get_slices_from_scan(z):
+                test_file.write('{}, {}\n'.format(z,s))
 
         train_file.close()
         val_file.close()
@@ -100,23 +67,31 @@ def create_csv_files(src_data, proportion):
     else:
         print('Data already splitted into training, validation, and testing')
 
-def data_mean_value(csv, dir):
+def data_mean_value(csv, nmax):
+
+
     data = pd.read_csv(csv)
     r, c = data.shape
-    values = np.zeros(r)
-    idx = 0
-    for i, row in data.iterrows():
-        img = imread(dir+row[0], pilmode="F")
-        values[idx] = np.mean(img, axis=(0,1))
-        idx += 1
+    samples_mean = np.zeros(r)
+    idSamples = 0
+    for i , b in data.head(nmax).iterrows():
+        slices = kd.get_slices_from_scan(b[0])
+        slices_mean = np.zeros(len(slices))
+        idSlices = 0
+        for s in slices:
+            slices_mean[idSlices] = np.mean(kd.getMRISlice(b[0], s), axis=(0,1))
+            idSlices += 1
+        samples_mean[idSamples] = np.mean(slices_mean, axis=0)
+        idSamples += 1
 
-    return np.mean(values,axis=0)
+    return np.mean(samples_mean,axis=0)
 
 
 
 if __name__ == "__main__":
-    src_img = "/home/luis/Desktop/Datasets/Apple CT/recs-10-projs/input/"
-    split_proportion = [.8, .1, .1]
-    #print(get_unique_scans(src_img))
-    create_csv_files(src_img, split_proportion)
+
+   #print(data_mean_value('test_knee.csv'))
+   #data_mean_value('test_knee.csv')
+   create_csv_files([0.45,0.05,0.5])
+
 

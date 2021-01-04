@@ -22,6 +22,7 @@ from imageio import imread
 from Network.data_utils import data_mean_value
 import torch
 from torch.utils.data import Dataset
+import read_kneeDataset as kd
 
 
 """
@@ -31,17 +32,15 @@ train_dim:      dimensions (h,w) of the cropped files used in the training stage
 
 """
 
-train_dim   = (64,64)
+train_dim   = (128,128)
 
 
 class Tomographic_Dataset(Dataset):
 
     #directory of training files is passed to obtain the mean value of the images in the trained set which is not trained in the CNN
-    def __init__(self, csv_file, phase, input_dir, target_dir, n_class, crop=False, flip_rate=0., train_csv = ""):
+    def __init__(self, csv_file, phase, n_class, crop=False, flip_rate=0., train_csv = ""):
         self.data      = pd.read_csv(csv_file)
-        self.means     = data_mean_value(train_csv, input_dir) / 255.
-        self.input_dir = input_dir
-        self.target_dir= target_dir
+        self.means     = data_mean_value(train_csv, 10)
         self.flip_rate = flip_rate
         self.n_class   = n_class
 
@@ -57,10 +56,15 @@ class Tomographic_Dataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        img_name   = self.data.iloc[idx, 0]
-        img        = imread(self.input_dir+img_name, pilmode='F')
-        label_name = self.data.iloc[idx, 1]
-        label      = np.load(self.target_dir+label_name)
+        code   = self.data.iloc[idx, 0]
+        slice  = self.data.iloc[idx, 1]
+        img        = kd.getMRISlice(code, int(slice))
+        gt      = kd.getSegmentationSlice(kd.getSegmentationCode(code), int(slice))
+
+        h, w = gt.shape
+        label = np.zeros((self.n_class,h,w))
+        for c in range(self.n_class):
+            label[c][gt == c] = 1
 
         if self.crop:
             h, w, _  = img.shape
@@ -80,12 +84,12 @@ class Tomographic_Dataset(Dataset):
         img = torch.from_numpy(img.copy()).float()
         label = torch.from_numpy(label.copy()).float()
 
-        # create one-hot encoding
+
         _ , h, w = label.size()
         data_in = torch.zeros(1,h,w)
         data_in[0,:,:] = img
 
-        sample = {'X': data_in, 'Y': label, 'file': img_name}
+        sample = {'X': data_in, 'Y': label, 'scan': code, 'slice': slice}
 
         return sample
 

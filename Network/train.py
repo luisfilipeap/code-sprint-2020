@@ -20,25 +20,23 @@ import os
 
 
 
-net = "Network-SOTA"
+net = "Network-FCN-8"
 
 batch_size = 10 #antes 10
 epochs     = 100
 
 momentum   = 0.5
-w_decay    = 0 #antes 1e-5
+w_decay    = 1e-5 #antes 1e-5
 #after each 'step_size' epochs, the 'lr' is reduced by 'gama'
-lr         = 0.0001 # reference le-4
+lr         = 0.001 # reference le-4
 step_size  = 100
 gamma      = 0.5
 
 n_class = 6
 
-configs         = "{}-model-apple-dataset".format(net)
-train_file      = "train_apples.csv"
+configs         = "{}-model-OAI-dataset".format(net)
+train_file      = "train_knee.csv"
 val_file        = "validation_apples.csv"
-input_dir       = "/home/luis/Desktop/Datasets/Apple CT/recs-10-projs/input/"
-target_dir      = "/home/luis/Desktop/Datasets/Apple CT/recs-10-projs/output/"
 
 
 validation_accuracy = np.zeros((epochs,1))
@@ -53,11 +51,11 @@ use_gpu = torch.cuda.is_available()
 num_gpu = list(range(torch.cuda.device_count()))
 print("GPU Available: ",use_gpu, " number: ",len(num_gpu))
 
-train_data = Tomographic_Dataset(csv_file=train_file, phase='train', train_csv=train_file, input_dir=input_dir, target_dir=target_dir, n_class=6)
+train_data = Tomographic_Dataset(csv_file=train_file, phase='train', train_csv=train_file, n_class=5)
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=6)
 
 #directory of training files is passed to obtain the mean value of the images in the trained set which is not trained in the CNN
-val_data = Tomographic_Dataset(csv_file=val_file, phase='val', flip_rate=0, train_csv=train_file, input_dir=input_dir, target_dir=target_dir, n_class=6)
+val_data = Tomographic_Dataset(csv_file=val_file, phase='val', flip_rate=0, train_csv=train_file, n_class=5)
 val_loader = DataLoader(val_data, batch_size=1, num_workers=6)
 
 
@@ -88,7 +86,7 @@ if not os.path.exists(score_dir):
 
 def train():
     hit = 0
-    delta = 0.0001
+    delta = 0.000001
     for epoch in range(epochs):
         scheduler.step()
         if epoch > 2 and abs(validation_accuracy[epoch-2]-validation_accuracy[epoch-1]) < delta:
