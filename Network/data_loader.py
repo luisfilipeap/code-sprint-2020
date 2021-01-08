@@ -19,7 +19,7 @@ import random
 import os
 from imageio import imread
 
-from Network.data_utils import data_mean_value
+from data_utils import data_mean_value
 import torch
 from torch.utils.data import Dataset
 import read_kneeDataset as kd
@@ -59,7 +59,7 @@ class Tomographic_Dataset(Dataset):
         code   = self.data.iloc[idx, 0]
         slice  = self.data.iloc[idx, 1]
         img        = kd.getMRISlice(code, int(slice))
-        gt      = kd.getSegmentationSlice(kd.getSegmentationCode(code), int(slice))
+        gt      = kd.getSegmentationSlice(kd.getSegmentationCode(code), int(slice)-1)
 
         h, w = gt.shape
         label = np.zeros((self.n_class,h,w))

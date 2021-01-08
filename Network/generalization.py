@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from torchvision import utils
 from imageio import imwrite
 
-net             = "Network-FCN-8"
+net             = "Network-FCN-8-2nd"
 n_class         = 5
 
 
@@ -54,7 +54,8 @@ def evaluate_img():
         N, _, h, w = output.shape
         pred = output.transpose(0, 2, 3, 1).reshape(-1, n_class).argmax(axis=1).reshape(N, h, w)
         pred = pred[0,:,:]
-        imwrite(folder+'/'+name+'.png', pred*60)
+        imwrite(folder+'/'+name+'.png', pred)
+        np.save(folder+'/'+name+'.npy', pred)
 
 
 

@@ -50,8 +50,8 @@ def getSegmentationSlice(code, slice):
 
 
 if __name__ == '__main__':
-    c = '10929709'
-    slice = 112
+    c = '10457612'
+    slice = 160
     s = getMRISlice(c,slice)
     #print(s.shape)
     plt.figure('original')
